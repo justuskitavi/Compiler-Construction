@@ -1,0 +1,12 @@
+BEGIN %
+string name = "Ian"; 
+int salary = 10000; 
+int bonus = 500; 
+int hours_worked = 4; 
+while(hours_worked > 0){ 
+salary = salary + bonus; 
+hours_worked = hours_worked - 1; 
+} 
+cout << name; 
+cout << salary; 
+END 
