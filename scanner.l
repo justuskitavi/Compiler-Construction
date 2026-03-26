@@ -30,10 +30,10 @@ static TokenType emit(TokenType t, const char* text) {
         case T_INTEGER:
         case T_STRING_LITERAL:
         case T_ERROR:
-            std::cout << tokenTypeName(t) << "(" << lexeme << ") \n";
+            std::cout << tokenTypeName(t) << "(" << lexeme << ") ";
             break;
         default:
-            std::cout << tokenTypeName(t) << " \n";
+            std::cout << tokenTypeName(t) << " ";
             break;
     }
     return t;
@@ -41,6 +41,7 @@ static TokenType emit(TokenType t, const char* text) {
 %}
 
 %option noyywrap
+%option yylineno
 
 %%
 
