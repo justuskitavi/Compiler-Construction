@@ -38,7 +38,7 @@ enum TokenType {
     T_RPAREN,     // )
 
     // Special
-    T_UNKNOWN,
+    T_ERROR,
     T_EOF
 };
 
@@ -69,7 +69,7 @@ inline std::string tokenTypeName(TokenType t) {
         case T_RBRACE:         return "T_RBRACE";
         case T_LPAREN:         return "T_LPAREN";
         case T_RPAREN:         return "T_RPAREN";
-        case T_UNKNOWN:        return "T_UNKNOWN";
+        case T_ERROR:        return "T_ERROR";
         case T_EOF:            return "T_EOF";
         default:               return "T_INVALID";
     }

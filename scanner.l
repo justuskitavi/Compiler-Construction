@@ -29,11 +29,11 @@ static TokenType emit(TokenType t, const char* text) {
         case T_ID:
         case T_INTEGER:
         case T_STRING_LITERAL:
-        case T_UNKNOWN:
-            std::cout << tokenTypeName(t) << "(" << lexeme << ") ";
+        case T_ERROR:
+            std::cout << tokenTypeName(t) << "(" << lexeme << ") \n";
             break;
         default:
-            std::cout << tokenTypeName(t) << " ";
+            std::cout << tokenTypeName(t) << " \n";
             break;
     }
     return t;
@@ -72,6 +72,9 @@ static TokenType emit(TokenType t, const char* text) {
 ")"                     { emit(T_RPAREN,         yytext); }
 
 [ \t\n\r]+              { /* ignore whitespace */ }
-.                       { emit(T_UNKNOWN,        yytext); }
+.                       { std::cerr << "Lexical error at line " << yylineno
+                  << ": unexpected character '" << yytext[0]
+                  << "' ";
+                     emit(T_ERROR, yytext); }
 
 %%

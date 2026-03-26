@@ -45,7 +45,7 @@ static bool writeTokensToFile(const std::string& path) {
             case T_ID:
             case T_INTEGER:
             case T_STRING_LITERAL:
-            case T_UNKNOWN:
+            case T_ERROR:
                 out << tokenTypeName(tok.type) << "(" << tok.lexeme << ")\n";
                 break;
             default:

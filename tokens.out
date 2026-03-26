@@ -1,5 +1,5 @@
 T_BEGIN
-T_UNKNOWN(%)
+T_ERROR(%)
 T_STRING
 T_ID(name)
 T_ASSIGN
