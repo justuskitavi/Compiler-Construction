@@ -29,7 +29,6 @@ static TokenType emit(TokenType t, const char* text) {
         case T_ID:
         case T_INTEGER:
         case T_STRING_LITERAL:
-        case T_ERROR:
             std::cout << tokenTypeName(t) << "(" << lexeme << ") ";
             break;
         default:
@@ -75,7 +74,6 @@ static TokenType emit(TokenType t, const char* text) {
 [ \t\n\r]+              { /* ignore whitespace */ }
 .                       { std::cerr << "Lexical error at line " << yylineno
                   << ": unexpected character '" << yytext[0]
-                  << "' ";
-                     emit(T_ERROR, yytext); }
+                  << "' "; }
 
 %%
