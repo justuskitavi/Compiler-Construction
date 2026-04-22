@@ -81,7 +81,7 @@ struct Token {
     TokenType   type;
     std::string lexeme;
 
-    Token(TokenType t, const std::string& l) : type(t), lexeme(l) {}
+    Token(TokenType t, std::string& l) : type(t), lexeme(l) {}
 };
 
 #endif // TOKENS_H
