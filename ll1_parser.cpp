@@ -40,11 +40,33 @@
 #include <string>
 #include <stack>
 #include <map>
+#include <memory>
 #include <stdexcept>
 
 #include "terminals.h"
 #include "production_rules.h"
 #include "parse_table.h"
+
+struct TreeNode {
+    std::string label;
+    std::vector<std::shared_ptr<TreeNode>> children;
+    explicit TreeNode(std::string lbl) : label(std::move(lbl)) {}
+    void addChild(std::shared_ptr<TreeNode> c) { children.push_back(std::move(c)); }
+};
+
+void printTree(const std::shared_ptr<TreeNode> &node,
+               const std::string &prefix = "",
+               bool isLast = true)
+{
+    if (prefix.empty()) {
+        std::cout << node->label << "\n";
+    } else {
+        std::cout << prefix << (isLast ? "`-- " : "|-- ") << node->label << "\n";
+    }
+    const std::string childPfx = prefix + (isLast ? "    " : "|   ");
+    for (size_t i = 0; i < node->children.size(); ++i)
+        printTree(node->children[i], childPfx, i == node->children.size() - 1);
+}
 
 std::vector<Terminals> loadTokens(const std::string &path)
 {
@@ -96,76 +118,81 @@ public:
           table_(std::move(table)),
           pos_(0) {}
 
-    void parse()
+    std::shared_ptr<TreeNode> parse()
     {
-        // Initialise stack: push $ then the start symbol
-        stack_.push(Symbol::term(T_EOF));
-        stack_.push(Symbol::nonterm(NT_PROGRAM));
+        auto root = std::make_shared<TreeNode>("Program");
 
-        while (true)
-        {
-            Symbol top = stack_.top();
-            const Terminals &current = tokens_[pos_];
+        struct StackEntry {
+            Symbol sym;
+            std::shared_ptr<TreeNode> node;
+        };
 
-            if (top.isTerminal && top.terminal == T_EOF && current.type == T_EOF)
-            {
-                std::cout << "\n[Parser] SUCCESS — program is syntactically valid.\n";
-                return;
+        std::stack<StackEntry> stack;
+        stack.push({Symbol::term(T_EOF), nullptr});
+        stack.push({Symbol::nonterm(NT_PROGRAM), root});
+
+        while (true) {
+            StackEntry top = stack.top();
+            const Terminals &cur = tokens_[pos_];
+
+            // Accept
+            if (top.sym.isTerminal && top.sym.terminal == T_EOF && cur.type == T_EOF) {
+                std::cout << "\n[Parser] SUCCESS — program is syntactically valid.\n\n";
+                return root;
             }
 
-            // Top is terminal
-            if (top.isTerminal)
-            {
-                if (top.terminal == current.type)
-                {
-                    // Match: consume token
-                    std::string lex = current.lexeme.empty()
-                                          ? termName(current.type)
-                                          : termName(current.type) + std::string("(") + current.lexeme + ")";
-                    std::cout << "  match   " << lex << "\n";
-                    stack_.pop();
+            // Terminal match
+            if (top.sym.isTerminal) {
+                if (top.sym.terminal == cur.type) {
+                    std::string lbl = termName(cur.type);
+                    if (!cur.lexeme.empty()) lbl += "(" + cur.lexeme + ")";
+                    if (top.node) top.node->label = lbl;
+                    std::cout << "  match   " << lbl << "\n";
+                    stack.pop();
                     ++pos_;
-                }
-                else
-                {
-                    std::string got = current.lexeme.empty()
-                                          ? termName(current.type)
-                                          : std::string(termName(current.type)) + "(" + current.lexeme + ")";
+                } else {
+                    std::string got = termName(cur.type);
+                    if (!cur.lexeme.empty()) got += "(" + cur.lexeme + ")";
                     throw std::runtime_error(
-                        std::string("[Syntax error] expected '") + termName(top.terminal) +
-                        "', got '" + got + "'");
+                        std::string("[Syntax error] expected '") +
+                        termName(top.sym.terminal) + "', got '" + got + "'");
                 }
                 continue;
             }
 
-            // Top is non-terminal
-            NonTerminal nt = top.nt;
-            Terminal a = current.type;
+            // Non-terminal: look up production
+            NonTerminal nt = top.sym.nt;
+            Terminal    a  = cur.type;
 
             auto ntIt = table_.find(nt);
-            if (ntIt == table_.end() || ntIt->second.find(a) == ntIt->second.end())
-            {
-                std::string got = current.lexeme.empty()
-                                      ? termName(a)
-                                      : std::string(termName(a)) + "(" + current.lexeme + ")";
+            if (ntIt == table_.end() || ntIt->second.find(a) == ntIt->second.end()) {
+                std::string got = termName(a);
+                if (!cur.lexeme.empty()) got += "(" + cur.lexeme + ")";
                 throw std::runtime_error(
-                    std::string("[Syntax error] no rule for ") + ntName(nt) +
-                    " on input '" + got + "'");
+                    std::string("[Syntax error] no rule for ") +
+                    ntName(nt) + " on input '" + got + "'");
             }
 
             int prodNum = ntIt->second.at(a);
             const Production &prod = prods_[prodNum];
-
-            // Trace the production being applied
-            std::cout << "  rule " << prodNum
-                      << (prodNum < 10 ? " " : "") // align single-digit numbers
+            std::cout << "  rule " << prodNum << (prodNum < 10 ? " " : "")
                       << "  " << prod.description << "\n";
 
-            stack_.pop();
+            stack.pop();
+            auto parentNode = top.node;
 
-            // Push RHS symbols in reverse order (so left-most is on top)
-            for (int i = static_cast<int>(prod.rhs.size()) - 1; i >= 0; --i)
-                stack_.push(prod.rhs[i]);
+            if (prod.rhs.empty()) {
+                parentNode->addChild(std::make_shared<TreeNode>("epsilon"));
+            } else {
+                std::vector<std::shared_ptr<TreeNode>> childNodes;
+                for (const Symbol &sym : prod.rhs) {
+                    std::string lbl = sym.isTerminal ? termName(sym.terminal) : ntName(sym.nt);
+                    childNodes.push_back(std::make_shared<TreeNode>(lbl));
+                    parentNode->addChild(childNodes.back());
+                }
+                for (int i = (int)prod.rhs.size() - 1; i >= 0; --i)
+                    stack.push({prod.rhs[i], childNodes[i]});
+            }
         }
     }
 
@@ -202,7 +229,10 @@ int main(int argc, char *argv[])
     try
     {
         LL1Parser parser(std::move(tokens), std::move(prods), std::move(table));
-        parser.parse();
+        auto tree = parser.parse();
+
+        std::cout << "=== Parse Tree ===\n";
+        printTree(tree);
     }
     catch (const std::exception &e)
     {
