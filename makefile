@@ -8,7 +8,7 @@ scanner: main.o scanner.o
 	flex -i -o $@ $<
 
 clean:
-	rm -f *.o scanner scanner.cpp recursive ll1
+	rm -f *.o scanner scanner.cpp recursive ll1 partial
 
 recursive:
 	g++ recursive_parser.cpp -o recursive
@@ -16,7 +16,13 @@ recursive:
 ll1:
 	g++ ll1_parser.cpp parse_table.cpp terminals.cpp production_rules.cpp -o ll1
 
-parse: scanner ll1
+parse: clean scanner ll1
 	./scanner input.txt ; ./ll1 tokens.out
+
+partial:
+	g++ partial_tree.cpp parse_table.cpp terminals.cpp production_rules.cpp -o partial
+
+parse_partial: clean scanner partial
+	./scanner input.txt ; ./partial tokens.out
 
 all: clean scanner recursive ll1

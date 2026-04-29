@@ -58,22 +58,22 @@ struct Symbol
     union
     {
         Terminal terminal;
-        NonTerminal nt;
+        NonTerminal non_terminal;
     };
 
-    static Symbol term(Terminal t)
+    static Symbol term(Terminal terminal)
     {
-        Symbol s;
-        s.isTerminal = true;
-        s.terminal = t;
-        return s;
+        Symbol symbol;
+        symbol.isTerminal = true;
+        symbol.terminal = terminal;
+        return symbol;
     }
-    static Symbol nonterm(NonTerminal n)
+    static Symbol nonterm(NonTerminal non_terminal)
     {
-        Symbol s;
-        s.isTerminal = false;
-        s.nt = n;
-        return s;
+        Symbol symbol;
+        symbol.isTerminal = false;
+        symbol.non_terminal = non_terminal;
+        return symbol;
     }
 };
 
@@ -81,9 +81,9 @@ struct Symbol
 inline Symbol T(Terminal t) { return Symbol::term(t); }
 inline Symbol NT(NonTerminal nt) { return Symbol::nonterm(nt); }
 
-const char *termName(Terminal t);
+const char *termName(Terminal terminal);
 
-const char *ntName(NonTerminal nt);
+const char *ntName(NonTerminal non_terminal);
 
 Terminal nameToTerminal(const std::string &name);
 

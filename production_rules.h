@@ -9,7 +9,7 @@ struct Production
 {
     int number;              // rule number (1-30)
     std::string description; // human-readable RHS
-    std::vector<Symbol> rhs; // symbols to push (right-to-left on stack)
+    std::vector<Symbol> right_hand_side; // symbols to push (right-to-left on stack)
 };
 
 std::vector<Production> makeProductions();
